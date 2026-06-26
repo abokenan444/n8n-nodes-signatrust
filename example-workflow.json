@@ -1,0 +1,91 @@
+{
+  "name": "AI Loan Approval with Signatrust Receipt",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "user",
+              "content": "Evaluate this loan application. Name: John Doe. Annual income: $120,000. Requested amount: $50,000. Existing debt: $8,000. Reply with strict JSON: {\"approved\": boolean, \"reason\": string}."
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "OpenAI · Loan decision",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "operation": "generateReceipt",
+        "agentName": "LoanApprovalAgent",
+        "workflowName": "={{$workflow.name}}",
+        "action": "Evaluated loan application",
+        "decision": "={{$json.message.content}}",
+        "additionalFields": {
+          "modelProvider": "openai",
+          "modelUsed": "gpt-4o",
+          "decisionType": "loan_decision",
+          "riskLevel": "high",
+          "humanReview": false,
+          "policies": "eu-ai-act-high-risk, internal-credit-v3",
+          "permissions": "credit.decide",
+          "tags": "finance, loan, demo"
+        }
+      },
+      "id": "3",
+      "name": "Signatrust · Generate Receipt",
+      "type": "n8n-nodes-signatrust.signatrust",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "signatrustApi": {
+          "id": "1",
+          "name": "Signatrust API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "verifyReceipt",
+        "receiptId": "={{$json.receipt_id}}"
+      },
+      "id": "4",
+      "name": "Signatrust · Verify Receipt",
+      "type": "n8n-nodes-signatrust.signatrust",
+      "typeVersion": 1,
+      "position": [900, 300],
+      "credentials": {
+        "signatrustApi": {
+          "id": "1",
+          "name": "Signatrust API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [[{ "node": "OpenAI · Loan decision", "type": "main", "index": 0 }]]
+    },
+    "OpenAI · Loan decision": {
+      "main": [[{ "node": "Signatrust · Generate Receipt", "type": "main", "index": 0 }]]
+    },
+    "Signatrust · Generate Receipt": {
+      "main": [[{ "node": "Signatrust · Verify Receipt", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {}
+}
