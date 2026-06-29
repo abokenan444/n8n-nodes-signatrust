@@ -33,13 +33,6 @@ export class Signatrust implements INodeType {
 				required: true,
 			},
 		],
-		requestDefaults: {
-			baseURL: '={{$credentials.baseUrl}}',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-			},
-		},
 		properties: [
 			// ─── Operation Selector ─────────────────────────────────────────
 			{
