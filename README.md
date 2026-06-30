@@ -132,6 +132,14 @@ A minimal example workflow ships in this package as [`example-workflow.json`](./
 - Claude approval &rarr; signed receipt &rarr; CRM
 - Inbound webhook &rarr; verify &rarr; IF branch &rarr; fulfilment
 
+### 24 ready-to-import workflows
+
+A full, free library of **24 production-style workflows** built on this node lives in a companion repo &mdash; every workflow seals its AI decision with a signed receipt, covering finance, payments, support, HR, healthcare, governance and verification utilities:
+
+**&rarr; [abokenan444/n8n-signatrust-workflows](https://github.com/abokenan444/n8n-signatrust-workflows)** ([browse the showcase](https://abokenan444.github.io/n8n-signatrust-workflows/))
+
+Each workflow can be imported straight into n8n via **Import from URL** using the raw links listed in that repo's README.
+
 ---
 
 ## Error handling
@@ -153,6 +161,7 @@ Enable **Continue On Fail** on the node to route over-quota or invalid-receipt e
 - **Discovery document**: <https://signatrust.net/.well-known/signatrust.json>
 - **Public verify portal**: <https://signatrust.net/verify>
 - **Source**: <https://github.com/abokenan444/n8n-nodes-signatrust>
+- **Workflow library (24 recipes)**: <https://github.com/abokenan444/n8n-signatrust-workflows>
 
 ---
 
