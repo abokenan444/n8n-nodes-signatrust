@@ -76,6 +76,8 @@ Requires n8n `>= 1.0` and Node.js `>= 20`.
 | Human Review Took Place | no | Boolean |
 | Policies / Permissions / Tags | no | Comma-separated lists |
 | Include Raw Decision in Metadata | no | Off by default &mdash; opt in to persist the raw text |
+| Receipt Mode | no | `final_decision_only` (default), `every_tool_call`, `every_agent_step`, `custom` |
+| Trace ID / Step fields | no | Optional timeline controls (`trace_id`, `step_index`, `step_type`, `step_name`, `tool_name`) |
 
 The node also automatically attaches `workflow_id`, `execution_id` and `node_name` from n8n's execution context.
 
@@ -94,6 +96,7 @@ Response (handed to the next n8n step verbatim):
   "verify_url": "https://signatrust.net/api/v1/n8n/receipts/STR-3525207773/verify",
   "share_url": "https://signatrust.net/verify?id=STR-3525207773",
   "fetch_url": "https://signatrust.net/api/v1/n8n/receipts/STR-3525207773",
+  "trace": { "trace_id": "exec_123", "receipt_mode": "every_agent_step", "step_count": 4, "steps": [] },
   "receipt": { "id": "STR-3525207773", "type": "decision_receipt", "...": "..." }
 }
 ```
@@ -139,6 +142,19 @@ A full, free library of **24 production-style workflows** built on this node liv
 **&rarr; [abokenan444/n8n-signatrust-workflows](https://github.com/abokenan444/n8n-signatrust-workflows)** ([browse the showcase](https://abokenan444.github.io/n8n-signatrust-workflows/))
 
 Each workflow can be imported straight into n8n via **Import from URL** using the raw links listed in that repo's README.
+
+---
+
+## Release notes (0.3.5)
+
+- Removed dead `requestDefaults` config from the programmatic node (n8n review fix); request headers are handled per-request via `json: true` and the credential's `X-API-Key` authenticate block.
+- Published from the dedicated GitHub repository via GitHub Actions with npm provenance.
+
+## Release notes (0.3.3)
+
+- Added **Receipt Mode** controls: `final_decision_only`, `every_tool_call`, `every_agent_step`, `custom`.
+- Added trace controls in Generate operation: `trace_id`, `step_index`, `step_type`, `step_name`, `tool_name`.
+- Node now forwards trace fields to the Signatrust n8n API so responses can include execution timeline metadata.
 
 ---
 

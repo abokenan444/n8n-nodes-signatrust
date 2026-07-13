@@ -189,6 +189,19 @@ export class Signatrust implements INodeType {
 						description: 'Comma-separated list of policies that govern this decision',
 					},
 					{
+						displayName: 'Receipt Mode',
+						name: 'receiptMode',
+						type: 'options',
+						options: [
+							{ name: 'Custom', value: 'custom' },
+							{ name: 'Every Agent Step', value: 'every_agent_step' },
+							{ name: 'Every Tool Call', value: 'every_tool_call' },
+							{ name: 'Final Decision Only (Default)', value: 'final_decision_only' },
+						],
+						default: 'final_decision_only',
+						description: 'How much execution detail should be sealed into the receipt trace',
+					},
+					{
 						displayName: 'Risk Level',
 						name: 'riskLevel',
 						type: 'options',
@@ -202,12 +215,57 @@ export class Signatrust implements INodeType {
 						description: 'Risk classification of the decision',
 					},
 					{
+						displayName: 'Step Index',
+						name: 'stepIndex',
+						type: 'number',
+						default: 0,
+						typeOptions: { minValue: 0 },
+						description: 'Position of this step in the trace timeline (0-based)',
+					},
+					{
+						displayName: 'Step Name',
+						name: 'stepName',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. Retrieve customer profile',
+						description: 'Human-readable label for this execution step',
+					},
+					{
+						displayName: 'Step Type',
+						name: 'stepType',
+						type: 'options',
+						options: [
+							{ name: 'Agent Step', value: 'agent_step' },
+							{ name: 'Custom', value: 'custom' },
+							{ name: 'Final Response', value: 'final_response' },
+							{ name: 'Tool Call', value: 'tool_call' },
+						],
+						default: 'custom',
+						description: 'Step classification when Receipt Mode is Custom',
+					},
+					{
 						displayName: 'Tags',
 						name: 'tags',
 						type: 'string',
 						default: '',
 						placeholder: 'finance, loan, high-value',
 						description: 'Comma-separated tags to categorise this receipt',
+					},
+					{
+						displayName: 'Tool Name',
+						name: 'toolName',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. SQL Query',
+						description: 'Tool invoked during this step (for tool-level traces)',
+					},
+					{
+						displayName: 'Trace ID',
+						name: 'traceId',
+						type: 'string',
+						default: '',
+						placeholder: 'Optional shared trace ID; auto-derived when empty',
+						description: 'Groups related receipts into one execution timeline',
 					},
 				],
 			},
@@ -259,6 +317,12 @@ export class Signatrust implements INodeType {
 						permissions?: string;
 						tags?: string;
 						includeDecisionInMetadata?: boolean;
+						receiptMode?: string;
+						traceId?: string;
+						stepIndex?: number;
+						stepType?: string;
+						stepName?: string;
+						toolName?: string;
 					};
 
 					const body: Record<string, unknown> = {
@@ -293,6 +357,21 @@ export class Signatrust implements INodeType {
 					if (additional.tags) body.tags = additional.tags;
 					if (additional.includeDecisionInMetadata) {
 						body.include_decision_in_metadata = true;
+					}
+					const receiptMode = additional.receiptMode || 'final_decision_only';
+					body.receipt_mode = receiptMode;
+					if (additional.traceId) body.trace_id = additional.traceId;
+					if (typeof additional.stepIndex === 'number' && additional.stepIndex >= 0) {
+						body.step_index = Math.floor(additional.stepIndex);
+					}
+					if (additional.stepName) body.step_name = additional.stepName;
+					if (additional.toolName) body.tool_name = additional.toolName;
+					if (receiptMode === 'every_tool_call') {
+						body.step_type = 'tool_call';
+					} else if (receiptMode === 'every_agent_step') {
+						body.step_type = 'agent_step';
+					} else if (receiptMode === 'custom' && additional.stepType) {
+						body.step_type = additional.stepType;
 					}
 
 					const opts: IHttpRequestOptions = {
