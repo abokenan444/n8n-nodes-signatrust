@@ -10,6 +10,29 @@ import {
 	NodeConnectionTypes,
 	NodeOperationError,
 } from 'n8n-workflow';
+import { createHash } from 'crypto';
+
+/**
+ * Compute a deterministic SHA-256 commitment ("sha256:<hex>") to reviewer
+ * identity + specialty, locally in the n8n process. Only the commitment
+ * enters the signed Decision Receipt — the reviewer's raw identity and
+ * specialty never leave the customer environment.
+ */
+function humanReviewerAttestation(reviewer: Record<string, string | undefined>): {
+	hash: string;
+	reviewed_at: string;
+} {
+	const reviewed_at = reviewer.reviewed_at || new Date().toISOString();
+	const stable: Record<string, string> = { id: reviewer.id || '', reviewed_at };
+	if (reviewer.role) stable.role = reviewer.role;
+	if (reviewer.specialty) stable.specialty = reviewer.specialty;
+	if (reviewer.note) stable.note = reviewer.note;
+	const sortedKeys = Object.keys(stable).sort();
+	const canonical: Record<string, string> = {};
+	for (const k of sortedKeys) canonical[k] = stable[k]!;
+	const hex = createHash('sha256').update(JSON.stringify(canonical), 'utf8').digest('hex');
+	return { hash: 'sha256:' + hex, reviewed_at };
+}
 
 export class Signatrust implements INodeType {
 	description: INodeTypeDescription = {
@@ -155,6 +178,51 @@ export class Signatrust implements INodeType {
 						type: 'boolean',
 						default: false,
 						description: 'Whether a human reviewed the decision before it was finalised',
+					},
+					{
+						displayName: 'Reviewer ID (Local Only)',
+						name: 'reviewerId',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. STAFF-7734, LIC-42, EMP-9812',
+						description:
+							'Your internal reviewer identifier. Only a SHA-256 commitment to (id + role + specialty + reviewed_at + note) is sent to Signatrust — the raw identifier is hashed locally in n8n and never leaves this workflow.',
+					},
+					{
+						displayName: 'Reviewer Role (Local Only)',
+						name: 'reviewerRole',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. attending_physician, underwriter, credit_officer',
+						description:
+							'Free-form job role. Hashed locally with the other reviewer fields; never sent as plain text.',
+					},
+					{
+						displayName: 'Reviewer Specialty (Local Only)',
+						name: 'reviewerSpecialty',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. cardiology, consumer_credit, fraud_ops',
+						description:
+							'Reviewer discipline or specialty. Hashed locally with the other reviewer fields; never sent as plain text.',
+					},
+					{
+						displayName: 'Reviewer Reviewed-At (Local Only)',
+						name: 'reviewerReviewedAt',
+						type: 'string',
+						default: '',
+						placeholder: 'ISO-8601 timestamp (defaults to now)',
+						description:
+							'When the human review took place. Hashed locally with the other reviewer fields; never sent as plain text.',
+					},
+					{
+						displayName: 'Reviewer Note (Local Only)',
+						name: 'reviewerNote',
+						type: 'string',
+						default: '',
+						placeholder: 'e.g. protocol confirmed, second opinion obtained',
+						description:
+							'Short free-form note about the review. Hashed locally with the other reviewer fields; never sent as plain text.',
 					},
 					{
 						displayName: 'Include Raw Decision in Metadata',
@@ -323,6 +391,11 @@ export class Signatrust implements INodeType {
 						stepType?: string;
 						stepName?: string;
 						toolName?: string;
+						reviewerId?: string;
+						reviewerRole?: string;
+						reviewerSpecialty?: string;
+						reviewerReviewedAt?: string;
+						reviewerNote?: string;
 					};
 
 					const body: Record<string, unknown> = {
@@ -352,6 +425,19 @@ export class Signatrust implements INodeType {
 					if (additional.riskLevel) body.risk_level = additional.riskLevel;
 					if (typeof additional.humanReview === 'boolean')
 						body.human_review = additional.humanReview;
+					if (typeof additional.reviewerId === 'string' && additional.reviewerId.trim()) {
+						const reviewer = {
+							id: additional.reviewerId as string,
+							role: (additional.reviewerRole as string | undefined) || undefined,
+							specialty: (additional.reviewerSpecialty as string | undefined) || undefined,
+							reviewed_at:
+								(additional.reviewerReviewedAt as string | undefined) || undefined,
+							note: (additional.reviewerNote as string | undefined) || undefined,
+						};
+						const attestation = humanReviewerAttestation(reviewer);
+						body.human_review_attestation_hash = attestation.hash;
+						if (body.human_review !== false) body.human_review = true;
+					}
 					if (additional.policies) body.policies = additional.policies;
 					if (additional.permissions) body.permissions = additional.permissions;
 					if (additional.tags) body.tags = additional.tags;

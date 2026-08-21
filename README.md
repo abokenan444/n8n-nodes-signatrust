@@ -145,6 +145,12 @@ Each workflow can be imported straight into n8n via **Import from URL** using th
 
 ---
 
+## Release notes (0.4.1)
+
+- Added **Human-review attestation** to Generate: `Reviewer ID`, `Reviewer Role`, `Reviewer Specialty`, `Reviewer Reviewed-At`, `Reviewer Note`. All five fields are hashed locally inside the n8n process (SHA-256 over a canonical, sorted-keys JSON) and only the resulting `sha256:<hex>` commitment enters the signed Decision Receipt as `decision.human_review_attestation_hash`. The reviewer's raw identity, role and specialty never leave your n8n environment.
+- Setting `Reviewer ID` also implies `Human Review = true` unless you explicitly set it to `false`.
+- Backwards compatible: workflows built on 0.3.x that do not set the new reviewer fields continue to produce the exact same request bodies as before.
+
 ## Release notes (0.3.5)
 
 - Removed dead `requestDefaults` config from the programmatic node (n8n review fix); request headers are handled per-request via `json: true` and the credential's `X-API-Key` authenticate block.
@@ -185,6 +191,12 @@ Enable **Continue On Fail** on the node to route over-quota or invalid-receipt e
 
 - n8n `>= 1.0.0`
 - Node.js `>= 20`
+
+---
+
+## Missing something? Ask us to build it
+
+If your workflow needs a field, framework, or integration that isn't shipped yet &mdash; a native adapter for another platform, a specific reviewer/subject binding, or a custom `Additional Fields` mapping &mdash; email **[partners@signatrust.net](mailto:partners@signatrust.net)**. We'll ship what you need.
 
 ---
 
