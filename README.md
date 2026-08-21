@@ -145,7 +145,7 @@ Each workflow can be imported straight into n8n via **Import from URL** using th
 
 ---
 
-## Release notes (0.4.1)
+## Release notes (0.4.2)
 
 - Added **Human-review attestation** to Generate: `Reviewer ID`, `Reviewer Role`, `Reviewer Specialty`, `Reviewer Reviewed-At`, `Reviewer Note`. All five fields are hashed locally inside the n8n process (SHA-256 over a canonical, sorted-keys JSON) and only the resulting `sha256:<hex>` commitment enters the signed Decision Receipt as `decision.human_review_attestation_hash`. The reviewer's raw identity, role and specialty never leave your n8n environment.
 - Setting `Reviewer ID` also implies `Human Review = true` unless you explicitly set it to `false`.
